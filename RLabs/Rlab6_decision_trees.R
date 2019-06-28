@@ -1,10 +1,15 @@
-## RLab 6 - Decision Trees
-
-# Fitting Classification Trees
+## Machine Learning
+## Ciências de Dados Izabela Hendrix
+## Izabela Tech Open Day
+## Prof. Dr. Neylson Crepalde
+## RLab 6 - Tree based models
+###################################
 
 library(tree)
 library(ISLR)
 library(dplyr)
+
+## Fitting Classification Trees ####
 
 data("Carseats") 
 Carseats = Carseats %>% as_tibble
@@ -61,7 +66,7 @@ tree.pred = predict(prune.carseats, Carseats.test, type="class")
 table(tree.pred,Carseats.test$High)
 (102+53)/200 # Acurácia
 
-# Fitting Regression Trees
+## Fitting Regression Trees ####
 # Vamos trabalhar com o banco de dados Boston
 library(MASS)
 set.seed(1)
@@ -87,7 +92,7 @@ abline(0,1)
 mean((yhat - boston.test$medv)^2) #MSE
 
 
-# Bagging and Random Forests
+## Bagging and Random Forests ####
 
 library(randomForest)
 set.seed(1)
@@ -113,3 +118,38 @@ yhat.rf = predict(rf.boston,newdata=Boston[-train,])
 mean((yhat.rf-boston.test$medv)^2)
 importance(rf.boston)
 varImpPlot(rf.boston)
+
+
+## Boosting ####
+
+library(gbm)
+
+set.seed(1)
+
+boost.boston = gbm(medv~.,
+                   data=Boston[train,],  # Apenas treino
+                   distribution="gaussian", # Regressão
+                   n.trees=5000,  # B
+                   interaction.depth=4) # d
+summary(boost.boston)
+
+# Verificando o efeito marginal de rm e lstat
+plot(boost.boston,i="rm")
+plot(boost.boston,i="lstat")
+
+# verifica o erro de teste
+yhat.boost = predict(boost.boston, newdata=Boston[-train,], n.trees=5000)
+mean((yhat.boost-boston.test$medv)^2)
+
+# Agora vamos fazer o mesmo modelo de boosting com outro valor de lambda
+boost.boston = gbm(medv~.,
+                   data=Boston[train,],
+                   distribution="gaussian",
+                   n.trees=5000,
+                   interaction.depth=4,
+                   shrinkage=0.2,  # Valor de lambda
+                   verbose=F)  # Não verboso
+
+# Verifica o erro de teste
+yhat.boost = predict(boost.boston, newdata=Boston[-train,], n.trees=5000)
+mean((yhat.boost-boston.test$medv)^2)
