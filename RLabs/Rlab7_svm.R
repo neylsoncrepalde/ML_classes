@@ -8,6 +8,8 @@
 library(e1071)
 library(ROCR)
 library(ISLR)
+library(dplyr)
+library(readr)
 
 # Support Vector Classifier
 
@@ -119,3 +121,36 @@ table(out$fitted, dat$y)
 dat.te=data.frame(x=Khan$xtest, y=as.factor(Khan$ytest))
 pred.te=predict(out, newdata=dat.te)
 table(pred.te, dat.te$y)
+
+# Application to the cardio data
+par(mfrow=c(1,1))
+
+set.seed(2)
+
+cardio = read_csv2("https://github.com/neylsoncrepalde/RFSVM/blob/master/cardio_train.csv?raw=true")
+cardio$gender = factor(cardio$gender, levels = c(1,2), labels = c("Female", "Male"))
+cardio$cardio = factor(cardio$cardio, levels = c(0,1))
+
+table(cardio$cardio)
+
+train = sample(1:nrow(cardio), nrow(cardio)*.7)
+
+
+# Vai demorar de 15 a 30 minutos
+system.time({
+  fit = svm(cardio ~ . -id, data=cardio[train,],
+            kernel = "radial", cost=1, gamma=1)
+})
+summary(fit)
+plot(fit, cardio[train, ], age ~ weight)
+
+yhat = predict(fit, newdata = cardio[-train, ], type="class")
+
+table(cardio$cardio[-train], yhat)
+
+fitted = attributes(predict(fit, cardio[train,], decision.values=TRUE))$decision.values
+rocplot(fitted, cardio[train,"cardio"], main="Training Data")
+fitted = attributes(predict(fit, cardio[-train,], decision.values=TRUE))$decision.values
+rocplot(fitted, cardio[-train,"cardio"], main="Test Data", col="red", add=T)
+
+
