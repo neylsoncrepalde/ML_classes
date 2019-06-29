@@ -7,6 +7,7 @@
 
 library(e1071)
 library(ROCR)
+library(pROC)
 library(ISLR)
 library(dplyr)
 library(readr)
@@ -129,7 +130,7 @@ set.seed(2)
 
 cardio = read_csv2("https://github.com/neylsoncrepalde/RFSVM/blob/master/cardio_train.csv?raw=true")
 cardio$gender = factor(cardio$gender, levels = c(1,2), labels = c("Female", "Male"))
-cardio$cardio = factor(cardio$cardio, levels = c(0,1))
+cardio$cardio = factor(cardio$cardio, levels = c(0,1)) # Para o algoritmo
 
 table(cardio$cardio)
 
@@ -148,9 +149,16 @@ yhat = predict(fit, newdata = cardio[-train, ], type="class")
 
 table(cardio$cardio[-train], yhat)
 
+par(mfrow=c(1,1))
 fitted = attributes(predict(fit, cardio[train,], decision.values=TRUE))$decision.values
 rocplot(fitted, cardio[train,"cardio"], main="Training Data")
 fitted = attributes(predict(fit, cardio[-train,], decision.values=TRUE))$decision.values
 rocplot(fitted, cardio[-train,"cardio"], main="Test Data", col="red", add=T)
+
+# Calcula AUC
+auc(cardio$cardio[-train], 
+    as.numeric(yhat))
+
+
 
 
